@@ -1,0 +1,6 @@
+# BlockChain-coin
+
+This is a coin transaction system in a distribute network with blockhain.
+
+The library is a asynchronous Python implement of blockchain node based on [Kademlia distributed hash tabel]([bmuller/kademlia: A DHT in Python using asyncio (github.com)](https://github.com/bmuller/kademlia)).
+
