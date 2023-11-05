@@ -37,7 +37,6 @@ class Block:
         new_block.pre_hash = pre_hash
         new_block.next_hash = next_hash
         new_block.stamp = time.time()
-        new_block.__system_reward__(creater)
         new_block.hash = new_block.__digest__()
         return new_block
 
@@ -53,12 +52,6 @@ class Block:
         #transaction message decoding
         new_block.trans = Transaction_pool.TransPool_Decode(new_block.trans)
         return new_block
-    
-    def __system_reward__(self, creater):
-        ts = Transaction('0', creater, block_reward, time.time())
-        ts.hash = ts.__digest__()
-        self.trans.append(ts)
-        return ts
 
 
     def __str__(self) -> str:

@@ -1,7 +1,8 @@
 from utils.utils import *
+from copy import deepcopy
 import time
 import json
-import base64
+
 
 class Transaction:
     def __init__(self, trans_from : str=None, to : str=None, data=None, stamp=None, hash=None) -> None:
@@ -11,8 +12,15 @@ class Transaction:
         self.stamp = stamp
         self.hash = hash
 
+
     @staticmethod
-    def Transe_Create(trans_from : str, to : str, data):
+    def Transe_Create(trans_from : str, to : str, data : str):
+        r"""creates a new transaction. The suplement message such as stamp and hash will be automaticly 
+        maked. 
+        Notes:
+            The data must be str type and return None if not be succesfully created.
+        """
+        if not isinstance(data, str): None
         trans = Transaction(trans_from, to, data, time.time())
         trans.hash = trans.__digest__()
         return trans

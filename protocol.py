@@ -7,6 +7,7 @@ from block.blocklist import BlockList
 from block.block import Block
 from block.transaction import Transaction
 from block.transaction_pool import Transaction_pool
+from utils.utils import *
 
 log = logging.getLogger("Blockchain")
 
@@ -15,6 +16,20 @@ class DataExchangeProtocol(KademliaProtocol):
     def __init__(self, source_node, storage, ksize, node):
         super().__init__(source_node, storage, ksize)
         self.node = node
+        self.temp_data = {}
+
+    async def rpc_transp_metadata(self, sender : tuple, senderid : str, metadata : str, digest : str):
+        if not data_digest(metadata) == digest: return False
+        self.temp_data[senderid] += metadata
+        return True
+    
+    async def rpc_receive_trans(self, sender : tuple, senderid : str) -> bool:
+        trans_str = self.temp_data[senderid]
+        self.temp_data.pop(senderid)
+        trans = Transaction.Trans_Decode(trans_str)
+        if self.node.verify_trans(trans):
+            self.node.add_transaction(trans)
+            log.info("Succesfully received a new transaction.")
 
 
     async def rpc_forward_trans(self, sender, trans_str):
@@ -23,8 +38,8 @@ class DataExchangeProtocol(KademliaProtocol):
             log.error("There is a invalid json string of Transaction received.")
             return False
         if not self.node.hastx(trans.hash):
-            if self.node.verify_trans(trans): 
-                log.info("Receive transaction message from and forward to other node.")
+            if self.node.verify_trans(trans):
+                log.info("Receive transaction digest from and forward to other node.")
                 self.node.add_transaction(trans)
                 task = await self.node.broadcast(self.call_forward_trans, trans_str, [sender])
 

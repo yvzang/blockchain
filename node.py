@@ -1,4 +1,5 @@
 from kademlia.network import Server
+from kademlia.crawling import ValueSpiderCrawl
 from block.transaction import Transaction
 from block.transaction_pool import Transaction_pool
 from block.block import Block
@@ -26,15 +27,13 @@ class Node(Server):
         self.protocol_class = DataExchangeProtocol
 
     def verify_trans(self, trans : Transaction):
-        r"""Verifies the creater of the transaction weather have enough utxo.
+        r"""Verifies the formate of the transaction.
         Args:
             trans[Transaction]: transaction want to verify
         Returns:
             bool
         """
-        if trans.trans_from == '0': return True
-        utxo = self.blockchain.get_UTXO(trans.trans_from)
-        return utxo >= trans.data and trans.data > 0
+        return trans.hash == trans.__digest__()
     
     def verify_block(self, block : Block):
         r"""Verifies the all transaction contained in the block.
@@ -98,10 +97,13 @@ class Node(Server):
         Returns:
             Transaction
         """
-        return Transaction.Transe_Create(self.psu_key, to, data)
+        data_hash = data_digest(data)
+        trans = Transaction.Transe_Create(self.psu_key, to, data_hash)
+        asyncio.run(self.set(data_hash, data))
+        return trans
 
 
-    async def broadcast_transaction(self, trans):
+    async def broadcast_transaction(self, trans : Transaction):
         r"""Broadcast the tx to neighbors and the tx will not be broadcast if the tx can not be 
         verified successfully in local.
         """
@@ -190,7 +192,7 @@ class Node(Server):
         log.info("Succesfully syncronizes {} tx.".format(len(resp)))
 
     async def __syncronize_block__(self, block_digest):
-        if not block_digest or block_digest["hashs"]: return 
+        if not block_digest or not block_digest["hashs"]: return 
         dig_list = [h for h in block_digest["hashs"] if not self.hasbk(h)]
         if len(dig_list) == 0: return
         resp = await self.protocol.call_get_blocks((block_digest["addr"][0], block_digest["addr"][1]), dig_list)
@@ -220,9 +222,8 @@ class Node(Server):
     def add_transaction(self, tx : Transaction):
         self.trans_pool.append(tx)
 
-    def UTXO(self):
-        return self.blockchain.get_UTXO(self.psu_key)
-    
+    def get_value(self, value_hash :str):
+        print(asyncio.run(self.get(value_hash)))
 
     def print_block_header(self):
         b0 = self.blockchain.creater_block()

@@ -3,6 +3,7 @@ from block.transaction import Transaction
 from block.transaction_pool import Transaction_pool
 from block.block import Block
 import logging
+import base64
 import argparse
 from parse import ArgParse
 from threading import Thread
@@ -21,9 +22,7 @@ async def command(node : Node):
         cmd = input("Input your command:\n")
         args = ArgParse(cmd)
         args.add_argument('-c', '--cmd', arg_type=str, help='The operate command.')
-        if args.cmd == 'utxo':
-            print(node.UTXO())
-        elif args.cmd == 'headers':
+        if args.cmd == 'headers':
             node.print_block_header()
         elif args.cmd == 'check_block':
             args.add_argument('-h', '--hash', arg_type=str, help='The block hash want to check.')
@@ -32,9 +31,12 @@ async def command(node : Node):
             node.print_transaction_pool()
         elif args.cmd == 'create_tx':
             args.add_argument('-t', '--to', arg_type=str, help='The receiver of the transaction.')
-            args.add_argument('-d', '--data', arg_type=int, help="data")
+            args.add_argument('-d', '--data', arg_type=str, help="data")
             trans = node.make_transaction(args.to, args.data)
             asyncio.run(node.broadcast_transaction(trans))
+        elif args.cmd == 'get':
+            args.add_argument('-h', '--hash', arg_type=str, help="The hash of data")
+            node.get_value(args.hash)
         elif args.cmd == 'create_block':
             block = node.make_block(node.trans_pool)
             asyncio.run(node.broadcast_block(block))
@@ -53,8 +55,6 @@ def create_node(loop, node : Node, interface, port, boot_inter, boot_port):
         boostaddress = (boot_inter, int(boot_port))
         print(boostaddress)
         loop.run_until_complete(node.node_bootstrap([boostaddress]))
-    else:
-        node.accept_block(Block.Create_Block(Transaction_pool([Transaction.Transe_Create('0', '88888888', 50)]), 0, '0', None, None))
     try:
         loop.run_forever()
     except KeyboardInterrupt:
